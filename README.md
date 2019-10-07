@@ -7,5 +7,3 @@ Basic Calculator made in C# that appears as a Console Window
 
 ## Notes:
 - Having a go at sorting out the bugs listed above
-
-<blockquote class="imgur-embed-pub" lang="en" data-id="tuTclqx"><a href="//imgur.com/tuTclqx"></a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
