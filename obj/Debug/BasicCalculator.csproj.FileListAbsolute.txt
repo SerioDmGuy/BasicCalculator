@@ -1,7 +1,0 @@
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Debug\BasicCalculator.csprojAssemblyReference.cache
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Debug\BasicCalculator.csproj.CoreCompileInputs.cache
-D:\Files\Projects\Visual Studio C#\BasicCalculator\bin\Debug\BasicCalculator.exe.config
-D:\Files\Projects\Visual Studio C#\BasicCalculator\bin\Debug\BasicCalculator.exe
-D:\Files\Projects\Visual Studio C#\BasicCalculator\bin\Debug\BasicCalculator.pdb
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Debug\BasicCalculator.exe
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Debug\BasicCalculator.pdb

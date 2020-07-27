@@ -1,6 +1,0 @@
-D:\Files\Projects\Visual Studio C#\BasicCalculator\bin\Release\BasicCalculator.exe.config
-D:\Files\Projects\Visual Studio C#\BasicCalculator\bin\Release\BasicCalculator.exe
-D:\Files\Projects\Visual Studio C#\BasicCalculator\bin\Release\BasicCalculator.pdb
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Release\BasicCalculator.csproj.CoreCompileInputs.cache
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Release\BasicCalculator.exe
-D:\Files\Projects\Visual Studio C#\BasicCalculator\obj\Release\BasicCalculator.pdb
