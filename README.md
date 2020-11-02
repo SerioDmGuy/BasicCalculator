@@ -1,2 +1,2 @@
 # BasicCalculator
-Basic Calculator made in C# that appears as a Console Window
+Developed in .NET Core 3.1 as a C# Console Application.
