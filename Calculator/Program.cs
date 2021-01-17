@@ -6,7 +6,7 @@ namespace Calculator
 {
     class Program
     {    
-        static private char[] PMDAS = {'-', '+', '/', '*', '(', ')'};
+        static private char[] listMathOperators = {'-', '+', '/', '*',};
         static double GetPercent(double number) 
         => number / 0.1d / 1000d;
         
@@ -32,7 +32,7 @@ namespace Calculator
             if (yourOperator.Value.Length > 1)
                 return false;
             
-            foreach (Char pmdasOperator in PMDAS)
+            foreach (Char pmdasOperator in listMathOperators)
             {
                 if (pmdasOperator == Convert.ToChar(yourOperator.Value))
                     return true;
@@ -40,45 +40,57 @@ namespace Calculator
             return false;
         }
 
-        static bool IsOperatorHigherPrecedence(Match yourOperator, Match compareOperator)
+        static bool IsOperatorHigherPrecedence(Match yourOperator, Match comparedOperator)
         {            
-            List<Char> listOperators = new List<Char>(PMDAS);
+            List<Char> listOperators = new List<Char>(listMathOperators);
             int yourOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(yourOperator.Value));
-            int compareOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(compareOperator.Value));
+            int comparedOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(comparedOperator.Value));
             
-            if (yourOperatorPrecedence == -1 || compareOperatorPrecedence == -1)
-            {
-                Console.WriteLine($"ERROR: Couldn't compare operator's precedence because the chosen operators isn't supported, make sure it's one of these supported operators instead: '{listOperators}'");
-                return false;
-            }
-
-            if (yourOperatorPrecedence >= compareOperatorPrecedence) return true;
+            if (yourOperatorPrecedence > comparedOperatorPrecedence) return true;
             else return false;
         }
 
-        static Queue<Match> EnqueueOperatorTokensFromOperatorStackUntilParentheses(ref Queue<Match> tokenQueue, ref Stack<Match> operatorStack)
-        {
-            int operatorsForEnqueuingCount = 0; 
-            foreach (Match token in operatorStack)
-            {
-                if (token.Value == "(" || token.Value == ")") 
+        static Queue<Match> EnqueueOperatorStackTokensExceptParentheses(ref Queue<Match> yourQueue, ref Stack<Match> operatorStack)
+        {   
+            // TODO: Clean up function by splitting up "starts with closed parenthesis" 
+            //  and "ends in open parenthesis" into their own functions
+            
+            bool startsWithClosedParenthesis = false;
+            if (operatorStack.Count >= 1 && operatorStack.Peek().Value == ")")
+            { 
+                operatorStack.Pop(); 
+                startsWithClosedParenthesis = true;
+            }
+        
+            while (operatorStack.Count >= 1)
+            {          
+                if (operatorStack.Peek().Value == "(" || operatorStack.Peek().Value == ")")
                     break;
-                else if (IsOperator(token)) 
-                    operatorsForEnqueuingCount++;
-                else {Console.WriteLine("ERROR: Detected an non-operator token that can't be enqueued, therefore the operator stack is invalid");}
+                else if (IsOperator(operatorStack.Peek()))
+                    yourQueue.Enqueue(operatorStack.Pop());
+                else 
+                    {Console.WriteLine("ERROR: Detected an non-operator token that can't be enqueued."); break;}
             }
 
-            for (; operatorsForEnqueuingCount >= 1; operatorsForEnqueuingCount--)
-                    { tokenQueue.Enqueue(operatorStack.Pop()); }
-
-            return tokenQueue;
-        }
-
+            if (startsWithClosedParenthesis)
+            {
+                operatorStack.TryPeek(out Match lastOperator);
+                
+                if (operatorStack.Count >= 1 && lastOperator.Value == "(")
+                    operatorStack.Pop();
+                else 
+                {   Console.WriteLine("ERROR: All closed parentheses must have a open parenthesis"); 
+                    yourQueue = null;
+                }
+            }
+            return yourQueue;
+        }  
+        
         static MatchCollection CreateInfixTokens(string infixExpression)
         {   
-            infixExpression = String.Concat(infixExpression.Split(' '));
+            infixExpression = String.Concat(infixExpression.Split(' ')); // TODO Create a function that removes all whitespaces from expressions for calling instead.
             
-            Regex createInfixTokens = new Regex(@"(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+-])|(?<IncludeInvalidTokens>.)");
+            Regex createInfixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+-])|(?<IncludeInvalidTokens>.)");
             return createInfixTokens.Matches(infixExpression);
         }
 
@@ -96,51 +108,34 @@ namespace Calculator
                     operatorStack.Push(token);
 
                 else if (")" == token.Value)
-                {
-                    if (operatorStack.Count <= 0)
-                        {Console.WriteLine("ERROR: A Closed parenthesis cannot be alone within operator stack"); return null;}
-                    
-                    else { EnqueueOperatorTokensFromOperatorStackUntilParentheses(ref postfixTokens, ref operatorStack);
-
-                        if (operatorStack.Count >= 1)
-                        {
-                            if (operatorStack.Peek().Value == "(")
-                                operatorStack.Pop();
-                            else {Console.WriteLine("ERROR: All parenthesis pairs must be valid."); return null;}
-                        } 
-                        else {Console.WriteLine("ERROR: After enqueuing operators an open parenthesis token was to be expected within postfix Operator Stack"); return null;}
-                    }
+                { 
+                    operatorStack.Push(token);
+                    EnqueueOperatorStackTokensExceptParentheses(ref postfixTokens, ref operatorStack);
                 }
 
                 else if (IsOperator(token))
                 {   
-                    if (operatorStack.Count == 0)
-                        operatorStack.Push(token);
-                    
-                    else if (IsOperatorHigherPrecedence(token, operatorStack.Peek())) 
-                        operatorStack.Push(token);
-
-                    else if (!IsOperatorHigherPrecedence(token, operatorStack.Peek()))
-                    { 
-                        if (operatorStack.Peek().Value == "(")
-                            operatorStack.Push(token);
-                        
-                        else { EnqueueOperatorTokensFromOperatorStackUntilParentheses(ref postfixTokens, ref operatorStack);
-                            operatorStack.Push(token); }
-                    }   
+                    if (operatorStack.Count >= 1 && !IsOperatorHigherPrecedence(token, operatorStack.Peek()))
+                        EnqueueOperatorStackTokensExceptParentheses(ref postfixTokens, ref operatorStack);
+                    operatorStack.Push(token);
                 }
-                
-                else { Console.WriteLine("ERROR: Invalid infix token or tokens detected, make sure your infix expression is supported by Basic Calculator"); return null; }
+                else 
+                { 
+                    Console.Write("ERROR: Invalid infix token or tokens detected during postfix token creation, ");
+                    Console.WriteLine("make sure your infix expression is supported by Basic Calculator");
+                    return null;
+                }
             }
-    
-                EnqueueOperatorTokensFromOperatorStackUntilParentheses(ref postfixTokens, ref operatorStack);
-                if (operatorStack.Count >= 1)
-                {
-                    Console.WriteLine("ERROR: Left over elements within the Operator Stack, should've been popped out during postfix token enqueueing.");
-                    Console.WriteLine("Please ensure your infix expression/tokens are correct and supported (using this Basic Calculator) for successful conversion"); 
-                    return null; 
-                }
-                return postfixTokens;
+            EnqueueOperatorStackTokensExceptParentheses(ref postfixTokens, ref operatorStack);
+
+            if (operatorStack.Count >= 1) 
+            {   
+                Console.Write("ERROR: Your infix expression isn't correct, ");
+                Console.WriteLine("make sure your operators are in the right positions."); 
+                return null; 
+            }
+                
+            return postfixTokens;
         }
 
         static Double EvaluatePostfixTokens(Queue<Match> postfixTokens)
@@ -148,66 +143,79 @@ namespace Calculator
             Stack<Double> numberStack = new Stack<Double>();
             
             if (postfixTokens == null)
-                { Console.WriteLine("ERROR: Postfix tokens are needed from your infix expression/tokens as you can't evaluate null."); return 0.0; }
+            { Console.WriteLine("ERROR: Postfix tokens wasn't acquired for evaluation."); return 0.0; }
 
-            while (postfixTokens.Count > 0)
+            while (postfixTokens.Count >= 1)
             {
                 if (IsNumber(postfixTokens.Peek().Value))
                     numberStack.Push(Convert.ToDouble(postfixTokens.Dequeue().Value));
 
                 else if (IsOperator(postfixTokens.Peek()))
-                {
-                    string yourOperator = postfixTokens.Dequeue().Value;
+                    { 
+                        if (numberStack.Count >= 2)
+                        numberStack.Push(EvaluateOperatorExpression(ref numberStack, postfixTokens.Dequeue().Value));
+                        else {Console.WriteLine("ERROR: Can't evaluate your operator without two numbers."); return 0.0;}
+                    }
+                 
+                else 
+                { 
+                    Console.Write($"ERROR: Detected unsupported token '{postfixTokens.Peek().Value}' can't be processed ");
+                    Console.WriteLine("(Numbers or operator tokens only) for Postfix Token Evaluator.");
+                    return 0.0;
+                }
+            }            
+            return GetResultsFromNumberStack(numberStack);
+        }
 
-                    if (numberStack.Count < 2)
-                    { Console.WriteLine($"ERROR: Detected Operator '{yourOperator}' can't complete it's evaluation without two numbers, therefore evaluation process has been terminated."); 
-                    return 0.0; }
-                    
-                    double secondNumber = numberStack.Pop(), firstNumber = numberStack.Pop();
+        static double EvaluateOperatorExpression(ref Stack<Double> numberStack, String yourOperator)
+        {
+            if (numberStack.Count < 2)
+            {Console.WriteLine("ERROR: Can't evaluate operator without two numbers."); return 0.0d;}
+            
+            double secondNumber = numberStack.Pop();
+            double firstNumber = numberStack.Pop();
 
-                    switch (yourOperator)
-                    {   
-                        case "*": numberStack.Push(firstNumber * secondNumber); break;
-                        case "/": numberStack.Push(firstNumber / secondNumber); break;
-                        case "+": numberStack.Push(firstNumber + secondNumber); break;
-                        case "-": numberStack.Push(firstNumber - secondNumber); break;
-                        default: Console.WriteLine($"ERROR: Operator token '{yourOperator}' cannot evaluate because it's not supported by Postfix Token Evaluator."); return 0.0;
-                    } 
-                } 
-                else {Console.WriteLine($"ERROR: Detected unsupported token '{postfixTokens.Peek().Value}' can't be processed (Numbers or operator tokens only) for Postfix Token Evaluator."); return 0.0;}
+            switch (yourOperator)
+            {   
+                case "*": return (firstNumber * secondNumber);
+                case "/": return (firstNumber / secondNumber);
+                case "+": return (firstNumber + secondNumber);
+                case "-": return (firstNumber - secondNumber);
+                default: Console.WriteLine($"ERROR: Operator token '{yourOperator}' cannot evaluate because it's not supported."); return 0.0;
             }
+        }
 
+        static double GetResultsFromNumberStack(Stack<Double> numberStack)
+        {
             if (numberStack.Count <= 0)
-                {Console.WriteLine("ERROR: A number token generated via postfix evaluation is required for writing your results."); return 0.0;}
-            
-            double results = numberStack.Pop();
+                {Console.WriteLine("ERROR: Can't create results unless a number is given."); return 0.0d;}
+        
+            else if (numberStack.Count >= 2)
+                {Console.WriteLine("ERROR: Left over numbers weren't evaluated"); return 0.0d;}
 
-            if (numberStack.Count > 1)
-                {Console.WriteLine($"ERROR:'{numberStack.Count}' more number tokens have been detected as only one number token can represent results."); return 0.0; }
-            
-            return results; 
+            return numberStack.Pop();
         }
 
         static void Main()
         {   
             bool calculatorOn = true;
-
+            
             while (calculatorOn)
             {
                 string userInput = Console.ReadLine();
                 
-                if (userInput == "exit") 
-                {calculatorOn = false; break;}
-                
                 while (calculatorOn) 
                 {
-                    if (userInput == "clear" || userInput == "cls")
+                    if (userInput == "exit") 
+                        {calculatorOn = false; break;}
+                    
+                    else if (userInput == "clear" || userInput == "cls")
                         {Console.Clear(); break;}
                     
                     else if (String.IsNullOrEmpty(userInput) || String.IsNullOrWhiteSpace(userInput))
                         {Console.WriteLine("ERROR: Your input must not be empty."); break;}
                     
-                    Console.WriteLine(EvaluatePostfixTokens(CreatePostfixTokens(CreateInfixTokens(userInput))));
+                    Console.WriteLine($"Equals: {EvaluatePostfixTokens(CreatePostfixTokens(CreateInfixTokens(userInput)))}");
                     break;
                 }
             }
