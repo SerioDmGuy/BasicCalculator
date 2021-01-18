@@ -6,7 +6,7 @@ namespace Calculator
 {
     class Program
     {    
-        static private char[] listMathOperators = {'-', '+', '/', '*',};
+        static private char[] listMathOperators = {'-', '+', '/', '*', '^'};
         static double GetPercent(double number) 
         => number / 0.1d / 1000d;
         
@@ -27,24 +27,24 @@ namespace Calculator
             else return false; 
         }
         
-        static bool IsOperator(Match yourOperator)
+        static bool IsMathOperator(String yourOperator)
         {
-            if (yourOperator.Value.Length > 1)
+            if (yourOperator.Length > 1)
                 return false;
             
             foreach (Char pmdasOperator in listMathOperators)
             {
-                if (pmdasOperator == Convert.ToChar(yourOperator.Value))
+                if (pmdasOperator == Convert.ToChar(yourOperator))
                     return true;
             } 
             return false;
         }
 
-        static bool IsOperatorHigherPrecedence(Match yourOperator, Match comparedOperator)
+        static bool IsMathOperatorHigherPrecedence(String yourOperator, String comparedOperator)
         {            
             List<Char> listOperators = new List<Char>(listMathOperators);
-            int yourOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(yourOperator.Value));
-            int comparedOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(comparedOperator.Value));
+            int yourOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(yourOperator));
+            int comparedOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(comparedOperator));
             
             if (yourOperatorPrecedence > comparedOperatorPrecedence) return true;
             else return false;
@@ -66,7 +66,7 @@ namespace Calculator
             {          
                 if (operatorStack.Peek().Value == "(" || operatorStack.Peek().Value == ")")
                     break;
-                else if (IsOperator(operatorStack.Peek()))
+                else if (IsMathOperator(operatorStack.Peek().Value))
                     yourQueue.Enqueue(operatorStack.Pop());
                 else 
                     {Console.WriteLine("ERROR: Detected an non-operator token that can't be enqueued."); break;}
@@ -88,10 +88,10 @@ namespace Calculator
         
         static MatchCollection CreateInfixTokens(string infixExpression)
         {   
-            infixExpression = String.Concat(infixExpression.Split(' ')); // TODO Create a function that removes all whitespaces from expressions for calling instead.
+            infixExpression = String.Concat(infixExpression.Split(' ')); // TODO: Create a function that removes all whitespaces from expressions for calling instead.
             
-            Regex createInfixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+-])|(?<IncludeInvalidTokens>.)");
-            return createInfixTokens.Matches(infixExpression);
+            Regex infixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+^-])|(?<IncludeInvalidTokens>.)");
+            return infixTokens.Matches(infixExpression);
         }
 
         static Queue<Match> CreatePostfixTokens(MatchCollection infixTokens)
@@ -113,9 +113,9 @@ namespace Calculator
                     EnqueueOperatorStackTokensExceptParentheses(ref postfixTokens, ref operatorStack);
                 }
 
-                else if (IsOperator(token))
+                else if (IsMathOperator(token.Value))
                 {   
-                    if (operatorStack.Count >= 1 && !IsOperatorHigherPrecedence(token, operatorStack.Peek()))
+                    if (operatorStack.Count >= 1 && !IsMathOperatorHigherPrecedence(token.Value, operatorStack.Peek().Value))
                         EnqueueOperatorStackTokensExceptParentheses(ref postfixTokens, ref operatorStack);
                     operatorStack.Push(token);
                 }
@@ -143,23 +143,26 @@ namespace Calculator
             Stack<Double> numberStack = new Stack<Double>();
             
             if (postfixTokens == null)
-            { Console.WriteLine("ERROR: Postfix tokens wasn't acquired for evaluation."); return 0.0; }
+            { 
+                Console.WriteLine("ERROR: Postfix tokens wasn't acquired for evaluation."); 
+                return 0.0; 
+            }
 
             while (postfixTokens.Count >= 1)
             {
                 if (IsNumber(postfixTokens.Peek().Value))
                     numberStack.Push(Convert.ToDouble(postfixTokens.Dequeue().Value));
 
-                else if (IsOperator(postfixTokens.Peek()))
+                else if (IsMathOperator(postfixTokens.Peek().Value))
                     { 
                         if (numberStack.Count >= 2)
-                        numberStack.Push(EvaluateOperatorExpression(ref numberStack, postfixTokens.Dequeue().Value));
+                            numberStack.Push(EvaluateOperatorExpression(ref numberStack, postfixTokens.Dequeue().Value));
                         else {Console.WriteLine("ERROR: Can't evaluate your operator without two numbers."); return 0.0;}
                     }
                  
                 else 
                 { 
-                    Console.Write($"ERROR: Detected unsupported token '{postfixTokens.Peek().Value}' can't be processed ");
+                    Console.Write($"ERROR: Detected unsupported token '{postfixTokens.Peek()}' can't be processed ");
                     Console.WriteLine("(Numbers or operator tokens only) for Postfix Token Evaluator.");
                     return 0.0;
                 }
@@ -181,6 +184,7 @@ namespace Calculator
                 case "/": return (firstNumber / secondNumber);
                 case "+": return (firstNumber + secondNumber);
                 case "-": return (firstNumber - secondNumber);
+                case "^": return GetPowerOfNumber(firstNumber, secondNumber);
                 default: Console.WriteLine($"ERROR: Operator token '{yourOperator}' cannot evaluate because it's not supported."); return 0.0;
             }
         }
