@@ -43,17 +43,33 @@ namespace Calculator
             else return false;
         }
 
+        static bool IsOnlyOneParenthesisPopped(bool openParenthesisPop, bool closeParenthesisPop)
+        {       
+            if (openParenthesisPop && !closeParenthesisPop)
+            {     
+                Console.WriteLine("ERROR: Expected closed parenthesis"); 
+                return true;
+            }
+
+            else if (!openParenthesisPop && closeParenthesisPop)
+            {
+                Console.WriteLine("ERROR: Expected open parenthesis"); 
+                return true;
+            }
+            else return false;
+        }
+
         static bool IsNumber(string yourInput)
         {
             if (Double.TryParse(yourInput, out double foundNumber)) return true;
             else return false; 
         }
 
-        static string PeekOrProvideElement(Stack<Match> yourStack, string provideElement)
+        static string PeekOrProvideElement(Stack<Match> stack, string provideElement)
         {
-            if (IsEmpty<Match>(yourStack))
+            if (IsEmpty<Match>(stack))
                 return provideElement;
-            else return yourStack.Peek().Value;
+            else return stack.Peek().Value;
         }
         
         static void PopOnly(String element, out bool isPopped, Stack<Match> stack)
@@ -61,6 +77,7 @@ namespace Calculator
             isPopped = false;
             
             if (IsEmpty<Match>(stack)) {}
+            
             else if (stack.Peek().Value == element)
             {
                 stack.Pop(); 
@@ -70,10 +87,9 @@ namespace Calculator
 
         static MatchCollection CreateInfixTokens(string infixExpression)
         {   
-            infixExpression = String.Concat(infixExpression.Split(' ')); // TODO: Create a function that removes all whitespaces from expressions for calling instead.
+            infixExpression = String.Concat(infixExpression.Split(' '));
             
-            Regex infixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)
-            |(?<FindOperators>[()\/*+^-])|(?<IncludeInvalidTokens>.)");
+            Regex infixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+^-])|(?<IncludeInvalidTokens>.)");
             return infixTokens.Matches(infixExpression);
         }
 
@@ -90,14 +106,13 @@ namespace Calculator
                 else if (IsParenthesis(token.Value)) 
                 {
                     operatorStack.Push(token);
-                    if (")" == token.Value)
-                        EnqueueMathOperators(ref postfixTokens, ref operatorStack);
+                    if (")" == token.Value) EnqueuePostfixMathOperators(ref postfixTokens, ref operatorStack);
                 }
 
                 else if (IsMathOperator(token.Value))
                 {   
                     if (!IsMathOperatorHigherPrecedence(token.Value, PeekOrProvideElement(operatorStack, token.Value)))
-                        EnqueueMathOperators(ref postfixTokens, ref operatorStack);
+                        EnqueuePostfixMathOperators(ref postfixTokens, ref operatorStack);
                     operatorStack.Push(token);
                 }
                 else 
@@ -106,8 +121,14 @@ namespace Calculator
                     Console.WriteLine("make sure your infix expression is supported by Basic Calculator");
                     return null;
                 }
+
+                if (postfixTokens == null)
+                {
+                    Console.WriteLine("ERROR: Postfix token creation has been terminated."); 
+                    return postfixTokens;
+                }
             }
-            EnqueueMathOperators(ref postfixTokens, ref operatorStack);
+            EnqueuePostfixMathOperators(ref postfixTokens, ref operatorStack);
 
             if (!IsEmpty(operatorStack)) 
             {   
@@ -118,34 +139,25 @@ namespace Calculator
             return postfixTokens;
         }
 
-        static Queue<Match> EnqueueMathOperators(ref Queue<Match> yourQueue, ref Stack<Match> yourOperators)
+        static Queue<Match> EnqueuePostfixMathOperators(ref Queue<Match> yourQueue, ref Stack<Match> infixOperators)
         {   
-            PopOnly(")", out bool isClosedParenthesisPopped, yourOperators);
+            PopOnly(")", out bool isCloseParenthesisPop, infixOperators);
             
-            while (!IsEmpty(yourOperators))
+            while (!IsEmpty(infixOperators))
             {          
-                if (IsParenthesis(yourOperators.Peek().Value))
+                if (IsParenthesis(infixOperators.Peek().Value))
                     break;
-                else if (IsMathOperator(yourOperators.Peek().Value))
-                    yourQueue.Enqueue(yourOperators.Pop());
+                else if (IsMathOperator(infixOperators.Peek().Value))
+                    yourQueue.Enqueue(infixOperators.Pop());
                 else 
                     {Console.WriteLine("ERROR: Detected an non-operator token that can't be enqueued."); break;}
             }
-
-            PopOnly("(", out bool isOpenParenthesisPopped, yourOperators);
-
-            if (isOpenParenthesisPopped)
-            { 
-                if (!isClosedParenthesisPopped) 
-                { Console.WriteLine("ERROR: Expected closed parentheses"); yourQueue = null; }
-            }
-
-            if (isClosedParenthesisPopped)
-            { 
-                if (!isOpenParenthesisPopped) 
-                { Console.WriteLine("ERROR: Expected open parentheses"); yourQueue = null; }
-            }
             
+            PopOnly("(", out bool isOpenParenthesisPop, infixOperators);
+
+            if (IsOnlyOneParenthesisPopped(isOpenParenthesisPop, isCloseParenthesisPop))
+               { Console.WriteLine("ERROR: Ensure your parentheses pairs are correctly positioned."); yourQueue = null; }
+
             return yourQueue;
         } 
 
@@ -167,7 +179,7 @@ namespace Calculator
                 else 
                 { 
                     Console.Write($"ERROR: Detected unsupported token '{postfixTokens.Peek()}' can't be processed ");
-                    Console.WriteLine("(Numbers or operator tokens only) for Postfix Token Evaluator.");
+                    Console.WriteLine("(Numbers or postfix tokens only) for Postfix Token Evaluator.");
                     return 0.0;
                 }
             }            
@@ -184,11 +196,11 @@ namespace Calculator
 
             switch (yourOperator)
             {   
+                case "^": return GetPowerOfNumber(firstNumber, secondNumber);
                 case "*": return (firstNumber * secondNumber);
                 case "/": return (firstNumber / secondNumber);
                 case "+": return (firstNumber + secondNumber);
                 case "-": return (firstNumber - secondNumber);
-                case "^": return GetPowerOfNumber(firstNumber, secondNumber);
                 default: Console.WriteLine($"ERROR: Operator token '{yourOperator}' cannot evaluate because it's not supported."); return 0.0d;
             }
         }
@@ -213,7 +225,7 @@ namespace Calculator
                 {Console.WriteLine("ERROR: Results requires a number given."); return 0.0d;}
         
             else if (yourStack.Count >= 2)
-                {Console.WriteLine("ERROR: Results can't be more than one number."); return 0.0d;} // TODO: Add error about missing operators and parenthesis.
+                {Console.WriteLine("ERROR: Results can't be more than one number."); return 0.0d;}
 
             return yourStack.Pop();
         }
