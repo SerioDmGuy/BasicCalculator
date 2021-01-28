@@ -6,14 +6,14 @@ namespace Calculator
 {
     class Program
     {    
-        static readonly private char[] listMathOperators = {'-', '+', '/', '*', '^'};
+        static readonly private char[] mathOperators = {'-', '+', '/', '*', '^'};
         
         static bool IsMathOperator(String yourOperator)
         {
             if (yourOperator.Length > 1)
                 return false;
             
-            foreach (Char Operator in listMathOperators)
+            foreach (Char Operator in mathOperators)
             {
                 if (Operator == Convert.ToChar(yourOperator))
                     return true;
@@ -23,7 +23,7 @@ namespace Calculator
 
         static bool IsMathOperatorHigherPrecedence(String yourOperator, String comparedOperator)
         {            
-            List<Char> listOperators = new List<Char>(listMathOperators);
+            List<Char> listOperators = new List<Char>(mathOperators);
             int yourOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(yourOperator));
             int comparedOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(comparedOperator));
             
@@ -31,9 +31,9 @@ namespace Calculator
             else return false;
         }
 
-        static bool IsStackEmpty<T>(Stack<T> yourStack)
+        static bool IsEmpty<T>(Stack<T> stack)
         {
-            if (yourStack.Count <= 0) return true;
+            if (stack.Count <= 0) return true;
             else return false;
         }
 
@@ -51,19 +51,19 @@ namespace Calculator
 
         static string PeekOrProvideElement(Stack<Match> yourStack, string provideElement)
         {
-            if (IsStackEmpty<Match>(yourStack))
+            if (IsEmpty<Match>(yourStack))
                 return provideElement;
-            else return yourStack.Peek().Value;   
+            else return yourStack.Peek().Value;
         }
         
-        static void PopOnly(String element, out bool isPopped, Stack<Match> yourStack)
+        static void PopOnly(String element, out bool isPopped, Stack<Match> stack)
         {
             isPopped = false;
             
-            if (IsStackEmpty<Match>(yourStack)) {}
-            else if (yourStack.Peek().Value == element)
+            if (IsEmpty<Match>(stack)) {}
+            else if (stack.Peek().Value == element)
             {
-                yourStack.Pop(); 
+                stack.Pop(); 
                 isPopped = true;
             }
         }
@@ -72,7 +72,8 @@ namespace Calculator
         {   
             infixExpression = String.Concat(infixExpression.Split(' ')); // TODO: Create a function that removes all whitespaces from expressions for calling instead.
             
-            Regex infixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+^-])|(?<IncludeInvalidTokens>.)");
+            Regex infixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)
+            |(?<FindOperators>[()\/*+^-])|(?<IncludeInvalidTokens>.)");
             return infixTokens.Matches(infixExpression);
         }
 
@@ -90,13 +91,13 @@ namespace Calculator
                 {
                     operatorStack.Push(token);
                     if (")" == token.Value)
-                        EnqueuePostfixTokensFromStack(ref postfixTokens, ref operatorStack);
+                        EnqueueMathOperators(ref postfixTokens, ref operatorStack);
                 }
 
                 else if (IsMathOperator(token.Value))
                 {   
                     if (!IsMathOperatorHigherPrecedence(token.Value, PeekOrProvideElement(operatorStack, token.Value)))
-                        EnqueuePostfixTokensFromStack(ref postfixTokens, ref operatorStack);
+                        EnqueueMathOperators(ref postfixTokens, ref operatorStack);
                     operatorStack.Push(token);
                 }
                 else 
@@ -106,9 +107,9 @@ namespace Calculator
                     return null;
                 }
             }
-            EnqueuePostfixTokensFromStack(ref postfixTokens, ref operatorStack);
+            EnqueueMathOperators(ref postfixTokens, ref operatorStack);
 
-            if (!IsStackEmpty(operatorStack)) 
+            if (!IsEmpty(operatorStack)) 
             {   
                 Console.Write("ERROR: Your infix expression isn't correct, ");
                 Console.WriteLine("make sure your operators are in the right positions."); 
@@ -117,34 +118,34 @@ namespace Calculator
             return postfixTokens;
         }
 
-        static Queue<Match> EnqueuePostfixTokensFromStack(ref Queue<Match> yourQueue, ref Stack<Match> operatorStack)
+        static Queue<Match> EnqueueMathOperators(ref Queue<Match> yourQueue, ref Stack<Match> yourOperators)
         {   
-            PopOnly(")", out bool closedParenthesisPopped, operatorStack);
+            PopOnly(")", out bool isClosedParenthesisPopped, yourOperators);
             
-            while (!IsStackEmpty(operatorStack))
+            while (!IsEmpty(yourOperators))
             {          
-                if (IsParenthesis(operatorStack.Peek().Value))
+                if (IsParenthesis(yourOperators.Peek().Value))
                     break;
-                else if (IsMathOperator(operatorStack.Peek().Value))
-                    yourQueue.Enqueue(operatorStack.Pop());
+                else if (IsMathOperator(yourOperators.Peek().Value))
+                    yourQueue.Enqueue(yourOperators.Pop());
                 else 
                     {Console.WriteLine("ERROR: Detected an non-operator token that can't be enqueued."); break;}
             }
 
-            PopOnly("(", out bool openParenthesisPopped, operatorStack);
+            PopOnly("(", out bool isOpenParenthesisPopped, yourOperators);
 
-            if (openParenthesisPopped)
+            if (isOpenParenthesisPopped)
             { 
-                if (!closedParenthesisPopped) 
+                if (!isClosedParenthesisPopped) 
                 { Console.WriteLine("ERROR: Expected closed parentheses"); yourQueue = null; }
             }
 
-            if (closedParenthesisPopped)
+            if (isClosedParenthesisPopped)
             { 
-                if (!openParenthesisPopped) 
+                if (!isOpenParenthesisPopped) 
                 { Console.WriteLine("ERROR: Expected open parentheses"); yourQueue = null; }
             }
-
+            
             return yourQueue;
         } 
 
@@ -170,7 +171,7 @@ namespace Calculator
                     return 0.0;
                 }
             }            
-            return GetResultsFromNumberStack(numberStack);
+            return GetResults(numberStack);
         }
 
         static double GetOperatorExpressionResults(ref Stack<Double> numberStack, String yourOperator)
@@ -206,13 +207,13 @@ namespace Calculator
             return results;
         }
 
-        static double GetResultsFromNumberStack(Stack<Double> yourStack)
+        static double GetResults(Stack<Double> yourStack)
         {
             if (yourStack.Count <= 0)
-                {Console.WriteLine("ERROR: Can't create results unless a number is given."); return 0.0d;}
+                {Console.WriteLine("ERROR: Results requires a number given."); return 0.0d;}
         
             else if (yourStack.Count >= 2)
-                {Console.WriteLine("ERROR: Left over numbers weren't evaluated"); return 0.0d;}
+                {Console.WriteLine("ERROR: Results can't be more than one number."); return 0.0d;} // TODO: Add error about missing operators and parenthesis.
 
             return yourStack.Pop();
         }
