@@ -106,7 +106,8 @@ namespace Calculator
                 else if (IsParenthesis(token.Value)) 
                 {
                     operatorStack.Push(token);
-                    if (")" == token.Value) EnqueuePostfixMathOperators(ref postfixTokens, ref operatorStack);
+                    if (")" == token.Value) 
+                        EnqueuePostfixMathOperators(ref postfixTokens, ref operatorStack);
                 }
 
                 else if (IsMathOperator(token.Value))
@@ -117,7 +118,7 @@ namespace Calculator
                 }
                 else 
                 { 
-                    Console.Write("ERROR: Invalid infix token or tokens detected during postfix token creation, ");
+                    Console.Write("ERROR: Invalid infix token or tokens detected during postfix token creation");
                     Console.WriteLine("make sure your infix expression is supported by Basic Calculator");
                     return null;
                 }
@@ -153,10 +154,13 @@ namespace Calculator
                     {Console.WriteLine("ERROR: Detected an non-operator token that can't be enqueued."); break;}
             }
             
-            PopOnly("(", out bool isOpenParenthesisPop, infixOperators);
-
-            if (IsOnlyOneParenthesisPopped(isOpenParenthesisPop, isCloseParenthesisPop))
-               { Console.WriteLine("ERROR: Ensure your parentheses pairs are correctly positioned."); yourQueue = null; }
+            if (isCloseParenthesisPop)
+            { 
+                PopOnly("(", out bool isOpenParenthesisPop, infixOperators);
+                
+                if (IsOnlyOneParenthesisPopped(isOpenParenthesisPop, isCloseParenthesisPop))
+                    { Console.WriteLine("ERROR: Ensure your parentheses pairs are correctly positioned."); yourQueue = null; }
+            }
 
             return yourQueue;
         } 
@@ -225,7 +229,7 @@ namespace Calculator
                 {Console.WriteLine("ERROR: Results requires a number given."); return 0.0d;}
         
             else if (yourStack.Count >= 2)
-                {Console.WriteLine("ERROR: Results can't be more than one number."); return 0.0d;}
+                {Console.WriteLine("ERROR: Check infix expression for numbers without math operators besides them."); return 0.0d;}
 
             return yourStack.Pop();
         }
