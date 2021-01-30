@@ -6,16 +6,13 @@ namespace Calculator
 {
     class Program
     {    
-        static readonly private char[] mathOperators = {'-', '+', '/', '*', '^'};
+        static readonly private string[] mathOperators = {"-", "+", "/", "*", "**", "^", "%", "mod"};
         
         static bool IsMathOperator(String yourOperator)
-        {
-            if (yourOperator.Length > 1)
-                return false;
-            
-            foreach (Char Operator in mathOperators)
+        {   
+            foreach (String mathOperator in mathOperators)
             {
-                if (Operator == Convert.ToChar(yourOperator))
+                if (mathOperator == yourOperator)
                     return true;
             } 
             return false;
@@ -23,9 +20,9 @@ namespace Calculator
 
         static bool IsMathOperatorHigherPrecedence(String yourOperator, String comparedOperator)
         {            
-            List<Char> listOperators = new List<Char>(mathOperators);
-            int yourOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(yourOperator));
-            int comparedOperatorPrecedence = listOperators.IndexOf(Convert.ToChar(comparedOperator));
+            List<String> listOperators = new List<String>(mathOperators);
+            int yourOperatorPrecedence = listOperators.IndexOf(yourOperator);
+            int comparedOperatorPrecedence = listOperators.IndexOf(comparedOperator);
             
             if (yourOperatorPrecedence > comparedOperatorPrecedence) return true;
             else return false;
@@ -87,9 +84,7 @@ namespace Calculator
 
         static MatchCollection CreateInfixTokens(string infixExpression)
         {   
-            infixExpression = String.Concat(infixExpression.Split(' '));
-            
-            Regex infixTokens = new Regex(@"(?<FindSubtraction>(?<=[)])[-])|(?<FindNumbers>(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d+)|(?<FindOperators>[()\/*+^-])|(?<IncludeInvalidTokens>.)");
+            Regex infixTokens = new Regex(@"(?<FindSubtract>(?<=[)]|\d[%])[-])|(?<MatchNumbers>(?=[-]\d[.]|[-][.]\d|[.]\d|[-]\d|\d)(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d*[%]?(?!\d+))|(?<MatchOperators>[*]{2}|[()\/*+%^-]|mod)|(?<IncludeInvalidTokens>.)");
             return infixTokens.Matches(infixExpression);
         }
 
@@ -118,7 +113,7 @@ namespace Calculator
                 }
                 else 
                 { 
-                    Console.Write("ERROR: Invalid infix token or tokens detected during postfix token creation");
+                    Console.Write("ERROR: Invalid infix token or tokens detected during postfix token creation ");
                     Console.WriteLine("make sure your infix expression is supported by Basic Calculator");
                     return null;
                 }
@@ -178,7 +173,7 @@ namespace Calculator
                     numberStack.Push(Convert.ToDouble(postfixTokens.Dequeue().Value));
 
                 else if (IsMathOperator(postfixTokens.Peek().Value))
-                    numberStack.Push(GetOperatorExpressionResults(ref numberStack, postfixTokens.Dequeue().Value));
+                    numberStack.Push(EvaluateMathOperator(ref numberStack, postfixTokens.Dequeue().Value));
                 
                 else 
                 { 
@@ -190,7 +185,7 @@ namespace Calculator
             return GetResults(numberStack);
         }
 
-        static double GetOperatorExpressionResults(ref Stack<Double> numberStack, String yourOperator)
+        static double EvaluateMathOperator(ref Stack<Double> numberStack, String yourOperator)
         {
             if (numberStack.Count < 2)
             {Console.WriteLine("ERROR: Can't evaluate your operator without two numbers."); return 0.0;}
@@ -200,7 +195,10 @@ namespace Calculator
 
             switch (yourOperator)
             {   
+                case "mod": return GetModulo(firstNumber, secondNumber);
+                case "%": return GetModulo(firstNumber, secondNumber);
                 case "^": return GetPowerOfNumber(firstNumber, secondNumber);
+                case "**": return GetPowerOfNumber(firstNumber, secondNumber);
                 case "*": return (firstNumber * secondNumber);
                 case "/": return (firstNumber / secondNumber);
                 case "+": return (firstNumber + secondNumber);
@@ -212,6 +210,9 @@ namespace Calculator
         static double GetPercent(double number)
         => number / 0.1d / 1000d;
         
+        static double GetModulo(double firstNumber, double secondNumber)
+        => firstNumber % secondNumber;
+
         static double GetPowerOfNumber(double baseNumber, double powerNumber)
         {
             double results = baseNumber * 1;
@@ -240,19 +241,15 @@ namespace Calculator
             
             while (calculatorOn)
             {
-                string userInput = Console.ReadLine();
+                string userInput = String.Concat(Console.ReadLine().ToLower().Split(" "));
                 
                 while (calculatorOn) 
                 {
-                    // TODO: Function that handles all commands from input,
-                    // along with Upper and lowercase support.
-                    // --------------------------------------
                     if (userInput == "exit")
                         {calculatorOn = false; break;}
                     
                     else if (userInput == "clear" || userInput == "cls")
                         {Console.Clear(); break;}
-                    // --------------------------------------
                     
                     else if (String.IsNullOrEmpty(userInput) || String.IsNullOrWhiteSpace(userInput))
                         {Console.WriteLine("ERROR: Your input must not be empty."); break;}
