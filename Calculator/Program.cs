@@ -44,7 +44,7 @@ namespace Calculator
         {       
             if (openParenthesisPop && !closeParenthesisPop)
             {     
-                Console.WriteLine("ERROR: Expected closed parenthesis"); 
+                Console.WriteLine("ERROR: Expected closed parenthesis");
                 return true;
             }
 
@@ -84,7 +84,7 @@ namespace Calculator
 
         static MatchCollection CreateInfixTokens(string infixExpression)
         {   
-            Regex infixTokens = new Regex(@"(?<FindSubtract>(?<=[)]|\d[%])[-])|(?<MatchNumbers>(?=[-]\d[.]|[-][.]\d|[.]\d|[-]\d|\d)(?!(?<=\d)[-](?=[.]?\d+))[-]?\d*[.]?\d*[%]?(?!\d+))|(?<MatchOperators>[*]{2}|[()\/*+%^-]|mod)|(?<IncludeInvalidTokens>.)");
+            Regex infixTokens = new Regex(@"(?<FindSubtract>(?<=[)]|\d[%])[-])|(?<MatchNumbers>(?=[-]\d[.]|[-][.]\d|[.]\d|[-]\d|\d)(?!(?<=\d[.]|\d)[-](?=[.]?\d+))[-]?\d*[.]?\d*([%](?![.][\d]|[\d][.]|[-]|\d))?)|(?<MatchOperators>[*]{2}|[()\/*+%^-]|mod)|(?<IncludeInvalidTokens>.)");
             return infixTokens.Matches(infixExpression);
         }
 
