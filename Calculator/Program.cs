@@ -195,8 +195,8 @@ namespace Calculator
 
             switch (yourOperator)
             {   
-                case "mod": return GetModulo(firstNumber, secondNumber);
-                case "%": return GetModulo(firstNumber, secondNumber);
+                case "mod": return GetEuclideanModulo(firstNumber, secondNumber);
+                case "%": return GetEuclideanModulo(firstNumber, secondNumber);
                 case "^": return GetPowerOfNumber(firstNumber, secondNumber);
                 case "**": return GetPowerOfNumber(firstNumber, secondNumber);
                 case "*": return (firstNumber * secondNumber);
@@ -210,9 +210,16 @@ namespace Calculator
         static double GetPercent(double number)
         => number / 0.1d / 1000d;
         
-        static double GetModulo(double firstNumber, double secondNumber)
-        => firstNumber % secondNumber;
+        static double GetEuclideanModulo(double firstNumber, double secondNumber)
+        {
+            int modulo = (int) firstNumber % (int) secondNumber;
+            if (modulo < 0)
+                modulo = (secondNumber < 0) ? modulo - (int) secondNumber
+                : modulo + (int) secondNumber;
 
+            return modulo;
+        }
+        
         static double GetPowerOfNumber(double baseNumber, double powerNumber)
         {
             double results = baseNumber * 1;
@@ -230,7 +237,7 @@ namespace Calculator
                 {Console.WriteLine("ERROR: Results requires a number given."); return 0.0d;}
         
             else if (yourStack.Count >= 2)
-                {Console.WriteLine("ERROR: Check infix expression for numbers without math operators besides them."); return 0.0d;}
+                {Console.WriteLine("ERROR: Check infix expression for missing math operators besides numbers, parenthesis and submit again."); return 0.0d;}
 
             return yourStack.Pop();
         }
