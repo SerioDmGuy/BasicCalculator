@@ -187,8 +187,11 @@ namespace Calculator
 
         static double EvaluateMathOperator(ref Stack<Double> numberStack, String yourOperator)
         {
+            if(!IsMathOperator(yourOperator))
+                {Console.WriteLine($"ERROR: Can't evaluate two numbers using a non-maths operator"); return 0.0d;}
+            
             if (numberStack.Count < 2)
-            {Console.WriteLine("ERROR: Can't evaluate your operator without two numbers."); return 0.0;}
+                {Console.WriteLine($"ERROR: Can't evaluate your math operator '{yourOperator}' without two numbers."); return 0.0;}
             
             double secondNumber = numberStack.Pop();
             double firstNumber = numberStack.Pop();
@@ -203,21 +206,23 @@ namespace Calculator
                 case "/": return (firstNumber / secondNumber);
                 case "+": return (firstNumber + secondNumber);
                 case "-": return (firstNumber - secondNumber);
-                default: Console.WriteLine($"ERROR: Operator token '{yourOperator}' cannot evaluate because it's not supported."); return 0.0d;
+                default: Console.Write($"ERROR: Math Operator '{yourOperator}' cannot evaluate because it's not supported");
+                Console.WriteLine("by this calculator."); return 0.0d;
             }
         }
 
         static double GetPercent(double number)
-        => number / 0.1d / 1000d;
+        => number / 100d;
         
-        static double GetEuclideanModulo(double firstNumber, double secondNumber)
+        static double GetEuclideanModulo(double dividend, double divisor)
         {
-            int modulo = (int) firstNumber % (int) secondNumber;
-            if (modulo < 0)
-                modulo = (secondNumber < 0) ? modulo - (int) secondNumber
-                : modulo + (int) secondNumber;
+            int remainder = (int) dividend % (int) divisor;
+            
+            if (remainder < 0)
+                remainder = (divisor < 0) ? remainder - (int) divisor
+                : remainder + (int) divisor;
 
-            return modulo;
+            return remainder;
         }
         
         static double GetPowerOfNumber(double baseNumber, double powerNumber)
@@ -234,12 +239,12 @@ namespace Calculator
         static double GetResults(Stack<Double> yourStack)
         {
             if (yourStack.Count <= 0)
-                {Console.WriteLine("ERROR: Results requires a number given."); return 0.0d;}
-        
-            else if (yourStack.Count >= 2)
-                {Console.WriteLine("ERROR: Check infix expression for missing math operators besides numbers, parenthesis and submit again."); return 0.0d;}
-
-            return yourStack.Pop();
+                {Console.WriteLine("ERROR: Results requires a number."); return 0.0d;}
+            
+            else if (IsNumber(yourStack.Peek().ToString()))
+                return yourStack.Pop();
+            
+            else {Console.WriteLine("ERROR: Results must be a number"); return 0.0d;}
         }
 
         static void Main()
