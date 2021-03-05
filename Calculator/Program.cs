@@ -6,13 +6,20 @@ namespace Calculator
 {
     class Program
     {    
+        static bool IsEmpty<T>(Stack<T> stack)
+        {
+            if (stack.Count <= 0) return true;
+            else return false;
+        }
+        
+        // NOTE: Math operators are ordered by precedence here (lowest to highest)
         static readonly private string[] mathOperators = {"-", "+", "/", "*", "**", "^", "%", "mod"};
         
-        static bool IsMathOperator(String yourOperator)
+        static bool IsMathOperator(String str)
         {   
             foreach (String mathOperator in mathOperators)
             {
-                if (mathOperator == yourOperator)
+                if (mathOperator == str)
                     return true;
             } 
             return false;
@@ -20,23 +27,16 @@ namespace Calculator
 
         static bool IsMathOperatorHigherPrecedence(String yourOperator, String comparedOperator)
         {            
+            // NOTE: Math operators are based on element precedence
             List<String> listOperators = new List<String>(mathOperators);
             int yourOperatorPrecedence = listOperators.IndexOf(yourOperator);
             int comparedOperatorPrecedence = listOperators.IndexOf(comparedOperator);
             
+            // TODO BUG: Have all exponents treated as the same precedence
+            // To fix an operator ordering bug with all exponents treated differently in order,
+            // therefore making them the same.
+            
             if (yourOperatorPrecedence > comparedOperatorPrecedence) return true;
-            else return false;
-        }
-
-        static bool IsEmpty<T>(Stack<T> stack)
-        {
-            if (stack.Count <= 0) return true;
-            else return false;
-        }
-
-        static bool IsParenthesis(string yourInput)
-        {
-            if (yourInput == "(" || yourInput == ")") return true;
             else return false;
         }
 
@@ -56,9 +56,15 @@ namespace Calculator
             else return false;
         }
 
-        static bool IsNumber(string yourInput)
+        static bool IsParenthesis(string str)
         {
-            if (Double.TryParse(yourInput, out double foundNumber)) return true;
+            if (str == "(" || str == ")") return true;
+            else return false;
+        }
+
+        static bool IsNumber(string str)
+        {
+            if (Double.TryParse(str, out double foundNumber)) return true;
             else return false; 
         }
 
@@ -69,13 +75,16 @@ namespace Calculator
             else return stack.Peek().Value;
         }
         
-        static void PopOnly(String element, out bool isPopped, Stack<Match> stack)
+        static void PopOnly(String thisElement, out bool isPopped, Stack<Match> stack)
         {
+            // TODO: PopOnly should also return the element like regular pop can
+            
             isPopped = false;
             
             if (IsEmpty<Match>(stack)) {}
-            
-            else if (stack.Peek().Value == element)
+            // TODO: Throw an empty exception if the stack itself is empty regular pop can
+
+            else if (stack.Peek().Value == thisElement)
             {
                 stack.Pop(); 
                 isPopped = true;
@@ -124,14 +133,15 @@ namespace Calculator
                     return postfixTokens;
                 }
             }
+            
             EnqueuePostfixMathOperators(ref postfixTokens, ref operatorStack);
 
             if (!IsEmpty(operatorStack)) 
             {   
-                Console.Write("ERROR: Your infix expression isn't correct, ");
-                Console.WriteLine("make sure your operators are in the right positions."); 
-                return null; 
+                Console.Write("ERROR: Leftover operator tokens within the operator stack aren't enqueued.");
+                return null;
             }
+
             return postfixTokens;
         }
 
@@ -154,8 +164,14 @@ namespace Calculator
                 PopOnly("(", out bool isOpenParenthesisPop, infixOperators);
                 
                 if (IsOnlyOneParenthesisPopped(isOpenParenthesisPop, isCloseParenthesisPop))
-                    { Console.WriteLine("ERROR: Ensure your parentheses pairs are correctly positioned."); yourQueue = null; }
+                    { 
+                        Console.Write("ERROR: Open parenthesis missing from parenthesis pair, ");
+                        Console.WriteLine("please ensure your parentheses pairs are correct and try again.");
+                        return yourQueue = null; 
+                    }
             }
+
+            // TODO: If it's detected a closed parenthesis on it's own report an error.
 
             return yourQueue;
         } 
@@ -267,6 +283,7 @@ namespace Calculator
                         {Console.WriteLine("ERROR: Your input must not be empty."); break;}
                     
                     Console.WriteLine($"Equals: {EvaluatePostfixTokens(CreatePostfixTokens(CreateInfixTokens(userInput)))}");
+                    // TODO: Abstract this line above into it's own function for readability sake.  
                     break;
                 }
             }
