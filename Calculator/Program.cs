@@ -6,21 +6,18 @@ namespace Calculator
 {
     class Program
     {    
-        static bool IsEmpty<T>(Stack<T> stack)
+        // Math Operators {"-", "+", "/", "*", "%", "mod", "**", "^",};
+        struct MathOperator
         {
-            if (stack.Count <= 0) return true;
-            return false;
+            string value {get; set;}
+            int precedence {get; set;}
+            string associativity {get; set;}
         }
-        static bool IsNumber(string str)
-        {
-            if (str == "NaN") 
-                return false;
-            
-            if (Double.TryParse(str, out double foundNumber)) 
-                return true;
-            
-            return false; 
-        }
+
+        
+        // TODO: CREATE INSTANCES OF MATH OPERATORS!!!
+
+
 
         // NOTE: Math operators are ordered by precedence (lowest to highest elements)
         static readonly private string[] mathOperators = {"-", "+", "/", "*", "%", "mod", "**", "^",};
@@ -52,6 +49,17 @@ namespace Calculator
             return false;
         }
 
+        static bool IsNumber(string str)
+        {
+            if (str == "NaN") 
+                return false;
+            
+            if (Double.TryParse(str, out double foundNumber)) 
+                return true;
+            
+            return false; 
+        }
+
         static bool IsParenthesis(string str)
         {
             if (str == "(" || str == ")") return true;
@@ -72,6 +80,12 @@ namespace Calculator
                 return true;
             }
             
+            return false;
+        }
+
+        static bool IsEmpty<T>(Stack<T> stack)
+        {
+            if (stack.Count <= 0) return true;
             return false;
         }
 
@@ -286,6 +300,7 @@ namespace Calculator
         static double GetNumber(Stack<Double> yourStack)
         {
             // Gets a number from a stack and returns it as a result.
+            // TODO: Rewrite identifier to SetResults?
             
             if (yourStack.Count >= 1)
             {
