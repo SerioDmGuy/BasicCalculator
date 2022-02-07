@@ -2,56 +2,77 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Calculator
+namespace Calculator // TODO: Change directory from "Calculator" to "calculator". Double check before attempting todo.
 {
     class Program
     {    
-        // Math Operators {"-", "+", "/", "*", "%", "mod", "**", "^",};
-        struct MathOperator
+        class MathOperator
         {
-            string value {get; set;}
-            int precedence {get; set;}
-            string associativity {get; set;}
+            public MathOperator(string name, string[] symbols, int precedence, string associativity)
+            {
+                this.name = name;
+                this.symbols = symbols;
+                this.precedence = precedence;
+                this.associativity = associativity;
+            }
+            public string name {get; set;}
+
+            // Operators can have different symbols repreasenting the same operator.
+            // think of them as alternatives such as "**" and "^" that represents power. 
+            public string[] symbols {get; set;}
+            public int precedence {get; set;}
+            public string associativity {get; set;}
+            public static readonly MathOperator Empty = new MathOperator("", new string[] {""}, 0, "");
         }
 
-        
-        // TODO: CREATE INSTANCES OF MATH OPERATORS!!!
+        // For each new math operator: name - symbols - precedence - associativity
+        static MathOperator subtraction = new MathOperator("subtraction", new string[] {"-"}, 0, "left to right");
+        static MathOperator addition = new MathOperator("addition", new string[] {"+"}, 0, "left to right");
+        static MathOperator division = new MathOperator("division", new string[] {"/"}, 1, "left to right");
+        static MathOperator multiplication = new MathOperator("multiplication", new string[] {"*"}, 1, "left to right");
+        static MathOperator modulo = new MathOperator("modulo", new string[] {"%", "mod", "modulo", "modulus"}, 1, "left to right");
+        static MathOperator power = new MathOperator("power", new string[] {"^", "**"}, 2, "right to left");
+        static MathOperator[] mathOperators = {subtraction, addition, division, multiplication, modulo, power};
 
+        struct Yard<T>
+        {
+            public Queue<T> queue;
+            public Stack<T> stack;            
+        }
 
-
-        // NOTE: Math operators are ordered by precedence (lowest to highest elements)
-        static readonly private string[] mathOperators = {"-", "+", "/", "*", "%", "mod", "**", "^",};
-        // TODO: Add alt operators called "modulo", "modulus" for our modulo operation.
-        // TODO: Does a operator require one or two numbers? as a variabile. 
-        
-        // ----------------------------------------------------------
-        // TODO ASAP: Create operator struct with a precedence variable.
-        // ----------------------------------------------------------
-
-        static bool IsMathOperator(String str)
-        {   
-            foreach (String mathOperator in mathOperators)
+        static MathOperator GetMathOperator(String str)
+        {
+            foreach (MathOperator mathOperator in mathOperators)
             {
-                if (mathOperator == str)
-                    return true;
-            } 
+                foreach (String symbol in mathOperator.symbols)
+                {
+                    if (str.ToLower() == symbol)
+                        return mathOperator;
+                }
+            }
+            return MathOperator.Empty;
+        }
+
+        static bool IsMathOperator(string str)
+        {   
+            if (GetMathOperator(str) != MathOperator.Empty)
+                return true;
             return false;
         }
 
-        static bool IsMathOperatorHigherPrecedence(String yourOperator, String comparedOperator)
+        static bool IsMathOperatorPrecedenceHigher(string yourOperator, string compareOperator)
         {            
-            // NOTE: Math operators are ordered by element precedence
-            List<String> listOperators = new List<String>(mathOperators);
-            int yourOperatorPrecedence = listOperators.IndexOf(yourOperator);
-            int comparedOperatorPrecedence = listOperators.IndexOf(comparedOperator);
-
-            if (yourOperatorPrecedence > comparedOperatorPrecedence) return true;
+            if (IsMathOperator(yourOperator) && IsMathOperator(compareOperator))
+            {
+                if (GetMathOperator(yourOperator).precedence > GetMathOperator(compareOperator).precedence)
+                    return true;
+            }
             return false;
         }
 
         static bool IsNumber(string str)
         {
-            if (str == "NaN") 
+            if (str == "NaN") // Not a Number
                 return false;
             
             if (Double.TryParse(str, out double foundNumber)) 
@@ -66,19 +87,10 @@ namespace Calculator
             return false;
         }
 
-        static bool IsOnlyOneParenthesisPopped(bool openParenthesisPop, bool closeParenthesisPop)
+        static bool IsParenthesisPairPopped(bool isOpenParenthesisPop, bool isCloseParenthesisPop)
         {       
-            if (openParenthesisPop && !closeParenthesisPop)
-            {     
-                Console.WriteLine("ERROR: Expected closed parenthesis");
+            if (isOpenParenthesisPop && isCloseParenthesisPop)
                 return true;
-            }
-
-            if (!openParenthesisPop && closeParenthesisPop)
-            {
-                Console.WriteLine("ERROR: Expected open parenthesis"); 
-                return true;
-            }
             
             return false;
         }
@@ -89,15 +101,17 @@ namespace Calculator
             return false;
         }
 
-        static string PeekOrProvideElement(Stack<Match> stack, string provideElement)
+        static string PeekOrProvideElement(Stack<Match> stack, string element)
         {
+            //TODO: Check both parameters for null argument exception
+            
             if (IsEmpty<Match>(stack))
-                return provideElement;
+                return element;
             
             return stack.Peek().Value;
         }
         
-        static void PopOnly(String thisElement, out bool isPopped, Stack<Match> stack)
+        static void PopOnly(String thisElement, ref Stack<Match> stack, out bool isPopped)
         {
             // TODO: PopOnly should also return the element like regular pop can
             isPopped = false;
@@ -116,91 +130,98 @@ namespace Calculator
         static MatchCollection CreateInfixTokens(string infixExpression)
         {   
             // Creates infix tokens from a infix expression.
-            // We spilt up the infix expression into tokens using regex
+            // By spilting up the infix expression into tokens using regex
             // matching either numbers, parentheses or supported math operators.
             
             // TODO: Split Regex into their own strings rather than a massive one liner
             // TODO: Check for invalid characters!!!
-            Regex infixTokens = new Regex(@"(?<FindNumbers>(?=[-]\d[.]|[-][.]\d|[.]\d|[-]\d|\d)(?!(?<=\d[.]|\d)[-](?=[.]?\d+))[-]?\d*[.]?\d*([%](?![.][\d]|[\d][.]|[-]|\d))?)|(?<FindMathOperators>[*]{2}|[()\/*+%^-]|mod)");
+            Regex infixTokens = new Regex(@"(?<FindNumbers>(?=[-]\d[.]|[-][.]\d|[.]\d|[-]\d|\d)(?!(?<=\d[.]|\d)[-](?=[.]?\d+))[-]?\d*[.]?\d*([%](?![.][\d]|[\d][.]|[-]|\d))?)|(?<FindOperators>[*]{2}|[()\/*+%^-]|mod)");
             return infixTokens.Matches(infixExpression);
         }
 
         static Queue<Match> InfixToPostfixTokens(MatchCollection infixTokens)
         {   
-            // Makes postfix tokens using the "Shunting yard algorithm".
-            // Essentially reordering infix tokens by using a queue and a stack,
-            // we can efficiently create better evaluation tokens.
-            
-            Queue<Match> postfixTokens = new Queue<Match>();
-            Stack<Match> operatorStack = new Stack<Match>();
+            // Converts infix tokens using the "Shunting yard algorithm".
+            // Essentially enqueuing numbers becomes a postfix token.
+            // Repositioning infix math operators are done using a stack.
+
+            Yard<Match> postfixYard = new Yard<Match>();
             
             foreach (Match token in infixTokens)
             {
+                // Each number becomes a postfix token
                 if (IsNumber(token.Value)) 
-                    postfixTokens.Enqueue(token);
+                    postfixYard.queue.Enqueue(token);
                 
-                else if (IsParenthesis(token.Value)) 
+                // Each parenthesis joins the stack
+                else if (IsParenthesis(token.Value))
                 {
-                    operatorStack.Push(token);
+                    postfixYard.stack.Push(token);
                     
                     if (")" == token.Value) 
-                        // We assume a parenthesis pair as been detected
-                        // therefore we enqueue maths opearators from our stack
-                        EnqueueMathOperators(ref postfixTokens, ref operatorStack);
-                }
-
-                else if (IsMathOperator(token.Value))
-                {   
-                    if (!IsMathOperatorHigherPrecedence(token.Value, PeekOrProvideElement(operatorStack, token.Value)))
-                        EnqueueMathOperators(ref postfixTokens, ref operatorStack);
-                    operatorStack.Push(token);
+                        EnqueueMathOperatorsFromParenthesisPair(ref postfixYard);
                 }
                 
+                // --------------------------------------------------------
+                // TODO: Enqueue Math Operators checking 4 rules in mind.
+                // --------------------------------------------------------
+
+                // You can't process non-infix tokens so therefore we terminate
                 else 
                 { 
-                    Console.Write("ERROR: Invalid infix token or tokens detected during postfix token creation. ");
-                    Console.WriteLine("\n Make sure your infix expression is supported by Basic Calculator");
-                    postfixTokens = null;
-                }
-
-                if (postfixTokens == null)
-                {
-                    Console.WriteLine("ERROR: Postfix token creation has been terminated."); 
-                    return postfixTokens = null;
+                    Console.WriteLine("ERROR: Invalid 'infix' token/s detected during infix to postfix.");
+                    return postfixYard.queue;
                 }
             }
             
-            // All math operators except multiple parenthesis pairs 
-            // get enqueued from the stack at the end.
-            EnqueueMathOperators(ref postfixTokens, ref operatorStack);
+            // At the end all math operators get enqueued from the stack 
+            EnqueueMathOperators(ref postfixYard.queue, ref postfixYard.stack);
 
-            if (!IsEmpty(operatorStack)) 
-                Console.WriteLine("ERROR: Leftover tokens within the postfix operator stack aren't enqueued.");
-            // TODO: If leftovers are detected exception occurs and terminates this function  
+            // Checks for leftover math operators within the stack
+            if (!IsEmpty(postfixYard.stack)) 
+                Console.WriteLine("ERROR: Leftover infix to postfix stack math operators aren't enqueued.");
 
-            return postfixTokens;
+            return postfixYard.queue;
+        }
+
+        static Yard<Match> PushMathOperatorToPostfixStack(Match mathOperator, ref Yard<Match> postfixYard)
+        {
+            if (!IsMathOperator(mathOperator.Value))
+                {
+                    Console.WriteLine("ERROR: Must provide a Math Operator to push Postfix's Stack"); 
+                    return postfixYard; 
+                }
+            
+            // Determines all rules for sorting an math operator below
+            if (IsEmpty(postfixYard.stack))
+                postfixYard.stack.Push(mathOperator);
+
+            // TODO: if     math operator has higher precedence compared to operator at top of stack.
+            // do   push math operator into stack
+
+            // TODO: If operator same precedence as operator on top of stack, check for associativity.
+            
+        }
+
+        static Yard<Match> EnqueueMathOperatorsFromParenthesisPair(ref Yard<Match> yourYard)
+        {
+            PopOnly(")", ref yourYard.stack, out bool isCloseParenthesisPop);
+            EnqueueMathOperators(ref yourYard.queue, ref yourYard.stack);
+            PopOnly("(", ref yourYard.stack, out bool isOpenParenthesisPop);
+
+            if (!IsParenthesisPairPopped(isOpenParenthesisPop, isCloseParenthesisPop))
+                Console.WriteLine("ERROR: Parenthesis must be in a pair ()"); 
+            
+            return yourYard;
         }
 
         static Queue<Match> EnqueueMathOperators(ref Queue<Match> yourQueue, ref Stack<Match> mathOperators)
         {   
-            PopOnly(")", out bool isCloseParenthesisPop, mathOperators);
-            
             while (!IsEmpty(mathOperators))
             {          
                 if (IsMathOperator(mathOperators.Peek().Value))
                     yourQueue.Enqueue(mathOperators.Pop());
                 else break;
-            }
-            
-            if (isCloseParenthesisPop)
-            { 
-                PopOnly("(", out bool isOpenParenthesisPop, mathOperators);
-
-                if (IsOnlyOneParenthesisPopped(isOpenParenthesisPop, isCloseParenthesisPop))
-                { 
-                    Console.WriteLine("ERROR: Open parenthesis missing from your parenthesis pair.");
-                    return yourQueue = null; 
-                }
             }
 
             return yourQueue;
@@ -208,41 +229,30 @@ namespace Calculator
 
         static Double EvaluatePostfixTokens(Queue<Match> postfixTokens)
         {
-            if (postfixTokens == null)
-            {
-                Console.WriteLine("ERROR: Postfix tokens wasn't acquired for evaluation."); 
-                return 0;
-            }
-
             Stack<Double> numberStack = new Stack<Double>();
-
+            
             foreach (Match token in postfixTokens)
             {
                 if (IsNumber(token.Value))
-                {
                     numberStack.Push(Convert.ToDouble(token.Value));
-                    continue;
-                }
+                
+                else if (IsMathOperator(token.Value))
+                    numberStack.Push(EvaluateMathOperator(token.Value, ref numberStack)); 
 
-                if (IsMathOperator(token.Value))
-                {
-                    numberStack.Push(EvaluateMathOperator(ref numberStack, token.Value)); 
-                    continue;
-                }
-
-                Console.WriteLine($"ERROR: Can't evaluate a non-postfix token '{token.Value}'");
-                return 0;
+                else 
+                    { Console.WriteLine($"ERROR: Can't evaluate a non-postfix token '{token.Value}'"); break; }
             }           
             
             return GetNumber(numberStack);
         }
 
-        static double EvaluateMathOperator(ref Stack<Double> yourNumbers, String mathOperator)
+        static double EvaluateMathOperator(String mathOperator, ref Stack<Double> yourNumbers)
         {
             if (yourNumbers.Count < 2)
             {
+                // TODO: This if statement isn't necessary
                 Console.WriteLine($"ERROR: Can't evaluate a maths operator without at least two numbers."); 
-                return 0.0;
+                return 0;
             }
             
             double secondNumber = yourNumbers.Pop();
@@ -257,14 +267,14 @@ namespace Calculator
                 case "^": return GetPowerOfNumber(firstNumber, secondNumber);
                 case "**": return GetPowerOfNumber(firstNumber, secondNumber);
                 case "*": return (firstNumber * secondNumber);
-                case "/": return GetDivide(firstNumber, secondNumber);
+                case "/": return GetEuclideanDivide(firstNumber, secondNumber);
                 case "+": return (firstNumber + secondNumber);
                 case "-": return (firstNumber - secondNumber);
                 default: Console.Write($"ERROR: Cannot evaluate because it's not a supported math operator '{mathOperator}'"); return 0.0d;
             }
         }
 
-        static double GetDivide(double dividend, double divisor)
+        static double GetEuclideanDivide(double dividend, double divisor)
         {
             if (divisor == 0) 
             {
@@ -277,9 +287,9 @@ namespace Calculator
 
         static double GetEuclideanModulo(double dividend, double divisor)
         {
-            // Returns the remainder of a Euclidean division with factional parts.
-            
-            // TODO: Remainder should include the factional number as well
+            // Returns the remainder of a Euclidean division (without factional parts)
+
+            // TODO: Append and return the factional part
             // For example 2.5mod2 = 0.5
             
             Math.DivRem((int) dividend, (int) divisor, out int remainder);
@@ -297,22 +307,10 @@ namespace Calculator
             return double.NaN;
         }
 
-        static double GetNumber(Stack<Double> yourStack)
-        {
-            // Gets a number from a stack and returns it as a result.
-            // TODO: Rewrite identifier to SetResults?
-            
-            if (yourStack.Count >= 1)
-            {
-                if (IsNumber(yourStack.Peek().ToString())) 
-                    return yourStack.Pop();
-
-                Console.WriteLine("ERROR: Results must be a number"); 
-                return Double.NaN;
-            }
-            
-            return 0;
-        }
+        // Gets a number from a stack and returns it.
+        // TODO: Rewrite function identifier to SetResults?
+        // TODO: If found an element, Parse element ensuring it's an number.
+        static double GetNumber(Stack<Double> yourStack) => (yourStack.Count >= 1) ? yourStack.Pop() : 0;
 
         static void Main()
         {   
