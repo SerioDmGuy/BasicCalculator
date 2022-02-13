@@ -5,7 +5,7 @@ A .NET Core 3.1 Calculator Console Application written in C#. The very first app
 
 # Features
 * **Easy**, **simple** and **lightweight** calculator.
-* **Basic Operators**: addition, subtraction, multiplication, power of number, euclidean division, euclidean modulo and percent.  
+* **Basic Operators**: addition, subtraction, multiplication, power of number, euclidean division, euclidean modulo.  
 * **Supports Parentheses**: for encapsulating infix expressions.
 * **Infix to Postfix conversion**: implements a traditional evaluation process, similar in most reverse polish notation implemented calculators. With an **optional argument** that **prints the created postfix expression** alongside your results.
 
