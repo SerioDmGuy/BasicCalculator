@@ -8,9 +8,9 @@ namespace Calculator.Tests
         [Test]
         public void GetMathOperator_MathOperators_ReturnsMathOperators()
         {
-            foreach (Program.MathOperator mathOperator in Program.mathOperators)            
-                foreach (String symbol in mathOperator.symbols)
-                    Assert.AreEqual(mathOperator.name, Program.GetMathOperator(symbol).name);
+            foreach (Program.MathOperator mathOperator in Program.MathOperators)            
+                foreach (String symbol in mathOperator.Symbols)
+                    Assert.AreEqual(mathOperator.Name, Program.GetMathOperator(symbol).Name);
         }
         
         [TestCase("   ")]

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Calculator // TODO: Double Check all member conventions. (pascal and camel casings .etc)
+namespace Calculator
 {
     public class Program
     {    
@@ -10,41 +10,41 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
         {
             public MathOperator(string name, string[] symbols, int precedence, string associativity)
             {
-                this.name = name;
-                this.symbols = symbols;
-                this.precedence = precedence;
-                this.associativity = associativity;
+                this.Name = name;
+                this.Symbols = symbols;
+                this.Precedence = precedence;
+                this.Associativity = associativity;
             }
-            public string name {get; set;}
+            public static readonly MathOperator Empty = new MathOperator("", new string[] {""}, -30, "");
+            public string Name {get; set;}
             // Operators can have different symbols representing the same operator.
             // think of them as alternatives such as "**" and "^" that represents power. 
-            public string[] symbols {get; set;}
-            public int precedence {get; set;}
-            public string associativity {get; set;}
-            public static readonly MathOperator Empty = new MathOperator("", new string[] {""}, -30, "");
+            public string[] Symbols {get; set;}
+            public int Precedence {get; set;}
+            public string Associativity {get; set;}
         }
 
         // For each new math operator: name - symbols - precedence - associativity
-        static MathOperator subtraction = new MathOperator("subtraction", new string[] {"-"}, 0, "left to right");
-        static MathOperator addition = new MathOperator("addition", new string[] {"+"}, 0, "left to right");
-        static MathOperator division = new MathOperator("division", new string[] {"/"}, 1, "left to right");
-        static MathOperator multiplication = new MathOperator("multiplication", new string[] {"*"}, 1, "left to right");
-        static MathOperator modulo = new MathOperator("modulo", new string[] {"%", "mod", "modulo"}, 1, "left to right");
-        static MathOperator power = new MathOperator("power", new string[] {"^", "**", "pow", "power"}, 2, "right to left");
-        public static MathOperator[] mathOperators = {subtraction, addition, division, multiplication, modulo, power};
+        static MathOperator s_subtraction = new MathOperator("subtraction", new string[] {"-"}, 0, "left to right");
+        static MathOperator s_addition = new MathOperator("addition", new string[] {"+"}, 0, "left to right");
+        static MathOperator s_division = new MathOperator("division", new string[] {"/"}, 1, "left to right");
+        static MathOperator s_multiplication = new MathOperator("multiplication", new string[] {"*"}, 1, "left to right");
+        static MathOperator s_modulo = new MathOperator("modulo", new string[] {"%", "mod", "modulo"}, 1, "left to right");
+        static MathOperator s_power = new MathOperator("power", new string[] {"^", "**", "pow", "power"}, 2, "right to left");
+        public static MathOperator[] MathOperators = {s_subtraction, s_addition, s_division, s_multiplication, s_modulo, s_power};
 
         public class Yard<T>
         {     
-            public Queue<T> queue = new Queue<T>();
-            public Stack<T> stack = new Stack<T>();
+            public Queue<T> Queue = new Queue<T>();
+            public Stack<T> Stack = new Stack<T>();
         }
 
         public static MathOperator GetMathOperator(String str)
         {
             if (str == null) return MathOperator.Empty;
-            foreach (MathOperator mathOperator in mathOperators)
+            foreach (MathOperator mathOperator in MathOperators)
             {
-                foreach (String symbol in mathOperator.symbols)
+                foreach (String symbol in mathOperator.Symbols)
                 {
                     if (str.ToLower() == symbol)
                         return mathOperator;
@@ -78,7 +78,7 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
         {   
             if (infixExpression == null) return Regex.Matches("boo", @"foo");
 
-            // Cleans up infix expression by removing whitespaces .etc
+            // Replaces infix expression with parenthesis asterisk placements
             infixExpression = Regex.Replace(string.Concat(infixExpression.ToLower().Trim().Split(" ")), "((?<=\\d\\.?)\\()|(?:(\\))(?=\\.?\\d))|(\\)\\()", delegate(Match token)
             {
                 // Places asterisks between numbers/parenthesis
@@ -96,13 +96,10 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
              
             foreach (Match token in infixTokens)
             {
-                if (token.Groups[4].Name == "MatchNonInfixTokens")
+                if (token.Groups[4].Name == "MatchNonInfixTokens" && token.Groups[4].Success)
                 {
-                    if (token.Groups[4].Success)
-                    {
-                        Console.WriteLine("ERROR: Invalid 'infix' token/s detected during infix token creation");
-                        return Regex.Matches("boo", @"foo");
-                    }
+                    Console.WriteLine("ERROR: Invalid 'infix' token/s detected during infix token creation");
+                    return Regex.Matches("boo", @"foo");
                 }
             }
             return infixTokens;
@@ -118,21 +115,21 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
             {
                 // Enqueuing numbers becomes a postfix token.
                 if (IsNumber(token.Value)) 
-                    postfixYard.queue.Enqueue(IsPercentNumber(token.Value) ? $"{PercentToNumber(token.Value)}" : token.Value);
+                    postfixYard.Queue.Enqueue(IsPercentNumber(token.Value) ? $"{PercentToNumber(token.Value)}" : token.Value);
                 
                 // Each parenthesis joins the stack
                 else if (token.Value == "(" | token.Value == ")")
                 {
-                    postfixYard.stack.Push(token.Value);
+                    postfixYard.Stack.Push(token.Value);
                     
                     if (")" == token.Value) 
                     {   
-                        bool isCloseParenthesisPop = postfixYard.stack.TryPeek(out String topElement) && ")" == topElement ? postfixYard.stack.TryPop(out String _) : false;
-                        EnqueueMathOperators(ref postfixYard, MathOperator.Empty.precedence);
-                        bool isOpenParenthesisPop = postfixYard.stack.TryPeek(out String top) && "(" == top ? postfixYard.stack.TryPop(out String _) : false;
+                        bool isCloseParenthesisPop = postfixYard.Stack.TryPeek(out String topElement) && ")" == topElement ? postfixYard.Stack.TryPop(out String _) : false;
+                        EnqueueMathOperators(ref postfixYard, MathOperator.Empty.Precedence);
+                        bool isOpenParenthesisPop = postfixYard.Stack.TryPeek(out String top) && "(" == top ? postfixYard.Stack.TryPop(out String _) : false;
 
-                        if (!isOpenParenthesisPop && !isCloseParenthesisPop)
-                            Console.WriteLine("ERROR: Parenthesis must be in a pair ()");
+                        if (!isOpenParenthesisPop || !isCloseParenthesisPop)
+                            Console.WriteLine("ERROR: Parentheses must be discarded between enqueuing Math operators as a pair ()");
                     }
                 }
                 
@@ -140,21 +137,21 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
                 else if (IsMathOperator(token.Value))
                 {
                     MathOperator yourOperator = GetMathOperator(token.Value);
-                    MathOperator stackOperator = postfixYard.stack.TryPeek(out string top) ? GetMathOperator(top) : MathOperator.Empty;
-                    if (yourOperator.precedence > stackOperator.precedence)
-                        postfixYard.stack.Push(token.Value);
-                    else if (yourOperator.precedence < stackOperator.precedence)
+                    MathOperator stackOperator = postfixYard.Stack.TryPeek(out string top) ? GetMathOperator(top) : MathOperator.Empty;
+                    if (yourOperator.Precedence > stackOperator.Precedence)
+                        postfixYard.Stack.Push(token.Value);
+                    else if (yourOperator.Precedence < stackOperator.Precedence)
                     {
-                        EnqueueMathOperators(ref postfixYard, yourOperator.precedence-1);
-                        postfixYard.stack.Push(token.Value);
+                        EnqueueMathOperators(ref postfixYard, yourOperator.Precedence-1);
+                        postfixYard.Stack.Push(token.Value);
                     }
-                    else if (yourOperator.precedence == stackOperator.precedence && stackOperator.associativity == "left to right")
+                    else if (yourOperator.Precedence == stackOperator.Precedence && stackOperator.Associativity == "left to right")
                     {
-                        EnqueueMathOperators(ref postfixYard, yourOperator.precedence-1);
-                        postfixYard.stack.Push(token.Value);
+                        EnqueueMathOperators(ref postfixYard, yourOperator.Precedence-1);
+                        postfixYard.Stack.Push(token.Value);
                     }
-                    else if (yourOperator.precedence == stackOperator.precedence && stackOperator.associativity == "right to left")
-                        postfixYard.stack.Push(token.Value);
+                    else if (yourOperator.Precedence == stackOperator.Precedence && stackOperator.Associativity == "right to left")
+                        postfixYard.Stack.Push(token.Value);
                 }
 
                 else // Not an infix token
@@ -164,21 +161,21 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
                 }
             }
             // At the end all math operators get enqueued from the stack
-            EnqueueMathOperators(ref postfixYard, MathOperator.Empty.precedence);
+            EnqueueMathOperators(ref postfixYard, MathOperator.Empty.Precedence);
 
             // Checks for leftover math operators within the stack
-            if (postfixYard.stack.Count >= 1)
-                Console.WriteLine("ERROR: Leftover Operators within InfixToPostfixTokens() stack aren't enqueued.");
+            if (postfixYard.Stack.Count >= 1)
+                Console.WriteLine("ERROR: Leftover stack operators aren't enqueued during infix to postfix conversion.");
 
-            return postfixYard.queue;
+            return postfixYard.Queue;
         }
 
         public static void EnqueueMathOperators(ref Yard<String> yard, int stopAtPrecedence)
         {   
-            while (yard.stack.Count >= 1)
+            while (yard.Stack.Count >= 1)
             {          
-                if (IsMathOperator(yard.stack.Peek()) && GetMathOperator(yard.stack.Peek()).precedence > stopAtPrecedence)
-                    yard.queue.Enqueue(yard.stack.Pop());
+                if (IsMathOperator(yard.Stack.Peek()) && GetMathOperator(yard.Stack.Peek()).Precedence > stopAtPrecedence)
+                    yard.Queue.Enqueue(yard.Stack.Pop());
                 else break;
             }
         } 
@@ -212,7 +209,7 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
                 return 0d;
             }
 
-            switch (GetMathOperator(mathOperator).name)
+            switch (GetMathOperator(mathOperator).Name)
             {   
                 case "power": return Math.Pow(firstNumber, secondNumber);
                 case "modulo": return GetModulo(firstNumber, secondNumber);
@@ -236,13 +233,16 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
         static void Main(string[] args)
         {   
             bool calculatorOn = true;
+            // TODO: Support passing single infix expression etc., argument
 
             while (calculatorOn)
             {   
-                Console.Write($"Math Operators: "); 
-                Array.ForEach(mathOperators, op => Console.Write($"{op.symbols[0]} "));
-                Console.WriteLine("\nPlease write your infix expression for calculation");
-                Console.Write(">"); 
+                Console.WriteLine("\n--------------------------------------------");
+                Console.Write("Math Operators: ");
+                Array.ForEach(MathOperators, op => Console.Write($"{op.Symbols[0]} "));
+                Console.WriteLine("\n--------------------------------------------");
+                Console.WriteLine("Write infix expression for calculation");
+                Console.Write(">");
                 string userInput = Console.ReadLine().ToLower().Trim();
 
                 if (userInput == "exit") { 
@@ -254,7 +254,7 @@ namespace Calculator // TODO: Double Check all member conventions. (pascal and c
 
                     Console.Write("Postfix: ");
                     Array.ForEach(postfixTokens.ToArray(), token => Console.Write($"{token} "));
-                    Console.WriteLine("\nResults: {0}\n", Double.IsPositiveInfinity(results) ? "Infinity" : Double.IsNegativeInfinity(results) ? "-Infinity" : results);
+                    Console.WriteLine("\nResults: {0}", Double.IsPositiveInfinity(results) ? "Infinity" : Double.IsNegativeInfinity(results) ? "-Infinity" : results);
                 }
             }
         }

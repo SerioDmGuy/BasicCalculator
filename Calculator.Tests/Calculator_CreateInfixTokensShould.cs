@@ -220,13 +220,11 @@ namespace Calculator.Tests
         [TestCase("     2 + 2         ", new String[] {"2", "+", "2"})]
         [TestCase("     2+2", new String[] {"2", "+", "2"})]
         [TestCase("2.-2", new String[] {"2.", "-", "2"})]
-
         [TestCase("4.(2+2)", new String[] {"4.", "*", "(", "2", "+", "2", ")"})]
         [TestCase(".4(2+2)", new String[] {".4", "*", "(", "2", "+", "2", ")"})]
         [TestCase("(2+2).4", new String[] {"(", "2", "+", "2", ")", "*", ".4"})]
         [TestCase("(2+2)-.4", new String[] {"(", "2", "+", "2", ")", "-", ".4"})]
         [TestCase("(2+2)--.4", new String[] {"(", "2", "+", "2", ")", "-", "-.4"})]
-
         [TestCase("1+6       ", new String[] {"1", "+", "6"})]
         [TestCase("4+2", new String[] {"4", "+", "2"})]
         [TestCase("6+4", new String[] {"6", "+", "4" })]
@@ -252,7 +250,6 @@ namespace Calculator.Tests
         [TestCase("4mod4", new String[] {"4", "mod", "4"})]
         [TestCase("4modulo4", new String[] {"4", "modulo", "4"})]
         [TestCase("(7+2)*1", new String[] {"(", "7", "+", "2", ")", "*", "1"})]
-
         [TestCase("(    7  +  2)  * 1", new String[] {"(", "7", "+", "2", ")", "*", "1"})]
         [TestCase("(    7  + 3   2)  * 1", new String[] {"(", "7", "+", "32", ")", "*", "1"})]
         [TestCase("(  1  7  +        2)  * 1", new String[] {"(", "17", "+", "2", ")", "*", "1"})]
@@ -261,7 +258,6 @@ namespace Calculator.Tests
         [TestCase("3%.2%", new String[] {"3", "%", ".2%"})]
         [TestCase("-4.%-2.", new String[] {"-4.", "%", "-2."})]
         [TestCase("5.+-2%^8", new String[] {"5.", "+", "-2%", "^", "8"})]
-
         [TestCase("6/2(1+2)", new String[] {"6", "/", "2", "*", "(", "1", "+", "2", ")"})]
         [TestCase("8/2(2+2)", new String[] {"8", "/", "2", "*", "(", "2", "+", "2", ")"})]
         [TestCase("6+9+4^2", new String[] {"6", "+", "9", "+", "4", "^", "2"})]
