@@ -233,7 +233,7 @@ namespace Calculator
         static void Main(string[] args)
         {   
             bool calculatorOn = true;
-            // TODO: Support passing single infix expression etc., argument
+            string userInput = args.Length >= 1 ? args[0] : "";
 
             while (calculatorOn)
             {   
@@ -243,18 +243,19 @@ namespace Calculator
                 Console.WriteLine("\n--------------------------------------------");
                 Console.WriteLine("Write infix expression for calculation");
                 Console.Write(">");
-                string userInput = Console.ReadLine().ToLower().Trim();
-
-                if (userInput == "exit") { 
-                    calculatorOn = false; break; }
+                
+                if (userInput == "") userInput = Console.ReadLine().ToLower().Trim();
+                else {calculatorOn = false; Console.WriteLine(userInput);}
+                
+                if (userInput == "exit") calculatorOn = false;
                 else
                 {
                     Queue<String> postfixTokens = InfixToPostfixTokens(CreateInfixTokens(userInput));
                     Double results = EvaluatePostfixTokens(postfixTokens);
-
                     Console.Write("Postfix: ");
                     Array.ForEach(postfixTokens.ToArray(), token => Console.Write($"{token} "));
                     Console.WriteLine("\nResults: {0}", Double.IsPositiveInfinity(results) ? "Infinity" : Double.IsNegativeInfinity(results) ? "-Infinity" : results);
+                    userInput = "";
                 }
             }
         }
